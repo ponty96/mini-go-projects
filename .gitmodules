@@ -1,3 +1,6 @@
 [submodule "k8s-deploy-notifier"]
 	path = k8s-deploy-notifier
 	url = git@github.com:ponty96/deploy-notifier.git
+[submodule "protohackers-go"]
+	path = protohackers-go
+	url = git@github.com:ponty96/protohackers-go.git
