@@ -1,0 +1,3 @@
+[submodule "k8s-deploy-notifier"]
+	path = k8s-deploy-notifier
+	url = git@github.com:ponty96/deploy-notifier.git
