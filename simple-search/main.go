@@ -9,64 +9,63 @@ import (
 	"strings"
 )
 
-type ProductSet struct {
-	data map[int]Product
+type EventSet struct {
+	data map[int]Event
 }
 
-func NewProductSet() ProductSet {
-	return ProductSet{data: make(map[int]Product)}
+func NewEventSet() EventSet {
+	return EventSet{data: make(map[int]Event)}
 }
 
-func (set *ProductSet) Add(key int, product Product) {
-	set.data[key] = product
+func (set *EventSet) Add(key int, event Event) {
+	set.data[key] = event
 }
-func (set *ProductSet) Contains(key int) (Product, bool) {
-	product, ok := set.data[key]
-	return product, ok
+func (set *EventSet) Contains(key int) (Event, bool) {
+	event, ok := set.data[key]
+	return event, ok
 }
 
-func (set *ProductSet) Empty() bool {
+func (set *EventSet) Empty() bool {
 	return len(set.data) == 0
 }
 
-func (set *ProductSet) Intersection(compareWithProductSet *ProductSet) ProductSet {
-	resultProductSet := NewProductSet()
+func (set *EventSet) Intersection(compareWithEventSet *EventSet) EventSet {
+	resultEventSet := NewEventSet()
 	// delete(set.data, key)
-	if len(set.data) < len(compareWithProductSet.data) {
+	if len(set.data) < len(compareWithEventSet.data) {
 		for key := range set.data {
-			if product, ok := compareWithProductSet.Contains(key); ok {
-				resultProductSet.Add(key, product)
+			if event, ok := compareWithEventSet.Contains(key); ok {
+				resultEventSet.Add(key, event)
 			}
 		}
 	} else {
-		for key := range compareWithProductSet.data {
-			if product, ok := set.Contains(key); ok {
-				resultProductSet.Add(key, product)
+		for key := range compareWithEventSet.data {
+			if event, ok := set.Contains(key); ok {
+				resultEventSet.Add(key, event)
 			}
 		}
 	}
-	return resultProductSet
+	return resultEventSet
 }
 
-func (set *ProductSet) Union(otherProductSet *ProductSet) ProductSet {
-	resultProductSet := NewProductSet()
-	for key, product := range set.data {
-		resultProductSet.Add(key, product)
+func (set *EventSet) Union(otherEventSet *EventSet) EventSet {
+	resultEventSet := NewEventSet()
+	for key, event := range set.data {
+		resultEventSet.Add(key, event)
 	}
-	for key, product := range otherProductSet.data {
-		resultProductSet.Add(key, product)
+	for key, event := range otherEventSet.data {
+		resultEventSet.Add(key, event)
 	}
-	return resultProductSet
+	return resultEventSet
 }
 
 type SearchEngine struct {
-	Index map[string]ProductSet
+	Index map[string]EventSet
 }
 
-type Product struct {
-	Name     string `json:"name"`
-	Id       int    `json:"id"`
-	Material string `json:"material"`
+type Event struct {
+	Title string `json:"Title"`
+	Id    int    `json:"ID"`
 }
 
 type Query struct {
@@ -78,7 +77,7 @@ type Query struct {
 func NewSearchEngine() SearchEngine {
 	// consider preprocessing the file
 	return SearchEngine{
-		Index: make(map[string]ProductSet),
+		Index: make(map[string]EventSet),
 	}
 }
 
@@ -98,16 +97,16 @@ func (s *SearchEngine) PreprocessData(dataStream *bufio.Reader) {
 		content = append(content, line...)
 	}
 
-	var products []Product
-	json.Unmarshal(content, &products)
+	var events []Event
+	json.Unmarshal(content, &events)
 
-	for _, product := range products {
-		// fmt.Println(product.Name, product.Id)
-		s.addProduct(product)
+	for _, event := range events {
+		// fmt.Println(event.Title, event.Id)
+		s.addEvent(event)
 	}
 }
 
-func (s *SearchEngine) SearchQuery(query Query) (ProductSet, error) {
+func (s *SearchEngine) SearchQuery(query Query) (EventSet, error) {
 	leftTermResult := s.searchWord(query.LeftTerm)
 	rightTermResult := s.searchWord(query.RightTerm)
 
@@ -115,55 +114,57 @@ func (s *SearchEngine) SearchQuery(query Query) (ProductSet, error) {
 	case query.Operation == "OR":
 		return leftTermResult.Union(&rightTermResult), nil
 	case leftTermResult.Empty() || rightTermResult.Empty():
-		return NewProductSet(), nil
+		return NewEventSet(), nil
 	case query.Operation == "AND":
 		return leftTermResult.Intersection(&rightTermResult), nil
 	default:
-		return NewProductSet(), errors.New(fmt.Sprintf("Wrong operation passed %s", query.Operation))
+		return NewEventSet(), errors.New(fmt.Sprintf("Wrong operation passed %s", query.Operation))
 	}
 }
 
-func (s *SearchEngine) Search(words string) ProductSet {
-	var resultProductSet ProductSet
+func (s *SearchEngine) Search(words string) EventSet {
+	var resultEventSet EventSet
 	for _, word := range strings.Split(words, " ") {
 		searchResult := s.searchWord(word)
 
-		resultProductSet = resultProductSet.Union(&searchResult)
+		resultEventSet = resultEventSet.Union(&searchResult)
 	}
-	return resultProductSet
+	return resultEventSet
 }
 
-func (s *SearchEngine) searchWord(word string) ProductSet {
-	if setOfProducts, ok := s.Index[word]; ok {
-		return setOfProducts
+func (s *SearchEngine) searchWord(word string) EventSet {
+	lowerCaseWord := strings.ToLower(word)
+	if setOfEvents, ok := s.Index[lowerCaseWord]; ok {
+		return setOfEvents
 	}
-	return NewProductSet()
+	return NewEventSet()
 }
 
-func (s *SearchEngine) addProduct(product Product) {
-	words := strings.Split(product.Name, " ")
+func (s *SearchEngine) addEvent(event Event) {
+	words := strings.Split(event.Title, " ")
 	for _, word := range words {
-		// fmt.Sprintf("Word: %s\n", word)
-		// fmt.Println(word)
-		// we want to add the word to the Index
-		if _, ok := s.Index[word]; !ok {
+		lowerCaseWord := strings.ToLower(word)
+		// fmt.Sprintf("Word: %s\n", lowerCaseWord)
+		// fmt.Println(lowerCaseWord)
+		// we want to add the lowerCaseWord to the Index
+		if _, ok := s.Index[lowerCaseWord]; !ok {
 			// fmt.Println("Word does not exist in the index")
-			setAtIndex := NewProductSet()
-			setAtIndex.Add(product.Id, product)
-			s.Index[word] = setAtIndex
+			setAtIndex := NewEventSet()
+			setAtIndex.Add(event.Id, event)
+			s.Index[lowerCaseWord] = setAtIndex
 		} else {
-			// the word already exists in the index
-			// we want to add the product to the set
-			setAtIndex := s.Index[word]
-			setAtIndex.Add(product.Id, product)
-			s.Index[word] = setAtIndex
+			// the lowerCaseWord already exists in the index
+			// we want to add the event to the set
+			setAtIndex := s.Index[lowerCaseWord]
+			setAtIndex.Add(event.Id, event)
+			s.Index[lowerCaseWord] = setAtIndex
 		}
 	}
 }
 
 func main() {
 	// Call the function
-	file, err := os.Open("/Users/ayomidearegbede/Documents/devland/go-stuff/simple-search/products_small.json")
+	file, err := os.Open("./realistic_event_data.json")
 	if err != nil {
 		// fmt.Println("Error opening file:", err)
 		return
@@ -176,15 +177,15 @@ func main() {
 	searchEngine := NewSearchEngine()
 
 	searchEngine.PreprocessData(reader)
-	// fmt.Println(searchEngine.Index)
+	fmt.Println(searchEngine.Index)
 
 	result := searchEngine.Search("Linen")
-	// we need to convert the result to a list of products
+	// we need to convert the result to a list of events
 
-	// for key, product := range result.data {
-	// 	fmt.Println(key, product)
-	// 	fmt.Println(product.Name)
-	// 	fmt.Println(product.Material)
+	// for key, event := range result.data {
+	// 	fmt.Println(key, event)
+	// 	fmt.Println(event.Title)
+	// 	fmt.Println(event.Material)
 	// }
 	fmt.Println(result)
 }
