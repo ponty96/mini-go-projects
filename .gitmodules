@@ -4,3 +4,6 @@
 [submodule "protohackers-go"]
 	path = protohackers-go
 	url = git@github.com:ponty96/protohackers-go.git
+[submodule "my-proto-schemas"]
+	path = my-proto-schemas
+	url = git@github.com:ponty96/my-proto-schemas.git
