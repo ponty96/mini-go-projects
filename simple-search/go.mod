@@ -1,4 +1,4 @@
-module ponty.me/simple-search
+module github.com/ponty96/simple-search
 
 go 1.22.3
 
